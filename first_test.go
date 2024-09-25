@@ -72,6 +72,33 @@ func TestFirstFirst(t *testing.T) {
 	}
 }
 
+func TestFirstError(t *testing.T) {
+	var f first.First[*example]
+
+	f.Do(func() (*example, error) {
+		time.Sleep(10 * time.Millisecond)
+
+		return &example{name: "one"}, nil
+	})
+
+	f.Do(func() (*example, error) {
+		return nil, errors.New("oops")
+	})
+
+	res, err := f.Wait()
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	if res == nil {
+		t.Fatal("Expected non-nil res, got nil")
+	}
+
+	if res.name != "one" {
+		t.Fatalf("Expected two, got %s", res.name)
+	}
+}
+
 func TestErrors(t *testing.T) {
 	var f first.First[*example]
 
