@@ -1,6 +1,9 @@
 # first
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/justindfuller/first.svg)](https://pkg.go.dev/github.com/justindfuller/first)
+[![Build Status](https://github.com/JustinDFuller/first/actions/workflows/build.yml/badge.svg)](https://github.com/JustinDFuller/first/actions/workflows/build.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/justindfuller/first)](https://goreportcard.com/report/github.com/justindfuller/first)
+![Go Test Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/justindfuller/63d4999a653a0555c9806062b40c0139/raw/first_coverage.json)
 
 Get the first result without an error.
 
