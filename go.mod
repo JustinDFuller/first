@@ -1,5 +1,5 @@
 module github.com/justindfuller/first
 
-go 1.23.1
+go 1.22
 
-require github.com/justindfuller/go-multierror v1.0.1 // indirect
+require github.com/justindfuller/go-multierror v1.0.1
