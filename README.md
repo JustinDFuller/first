@@ -20,23 +20,23 @@ type example struct{
 }
 
 func main() {
-    var f first.First[*example]
-
+	var f first.First[*example]
+	
 	f.Do(func() (*example, error) {
 		time.Sleep(10 * time.Millisecond)
-
+	
 		return &example{name: "one"}, nil
 	})
-
+	
 	f.Do(func() (*example, error) {
 		return &example{name: "two"}, nil
 	})
-
+	
 	res, err := f.Wait()
 	if err != nil {
 		log.Fatalf("Error: %s", err)
 	}
-
+	
 	log.Printf("Result: %v", res) // prints "two"
 }
 ```
