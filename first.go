@@ -54,7 +54,6 @@ type First[T any] struct {
 // Do does not inspect the value of T. So, if error is nil, T is returned.
 func (f *First[T]) Do(fn func() (T, error)) {
 	f.mut.Lock()
-	defer f.mut.Unlock()
 
 	f.count++
 
@@ -66,15 +65,34 @@ func (f *First[T]) Do(fn func() (T, error)) {
 		f.errors = make(chan error)
 	}
 
+	if f.context == nil {
+		ctx := f.context
+
+		// Avoid a panic with nil context
+		if ctx == nil {
+			ctx = context.Background()
+		}
+
+		f.context, f.cancel = context.WithCancel(ctx)
+	}
+
+	f.mut.Unlock()
+
 	go func() {
 		res, err := fn()
 		if err != nil {
-			f.errors <- err
+			select {
+			case f.errors <- err:
+			case <-f.context.Done():
+			}
 
 			return
 		}
 
-		f.result <- res
+		select {
+		case f.result <- res:
+		case <-f.context.Done():
+		}
 	}()
 }
 
@@ -100,7 +118,6 @@ func (f *First[T]) Do(fn func() (T, error)) {
 //	data, err := f.Wait()
 func (f *First[T]) DoContext(ctx context.Context, fn func(context.Context) (T, error)) {
 	f.mut.Lock()
-	defer f.mut.Unlock()
 
 	f.count++
 
@@ -121,15 +138,23 @@ func (f *First[T]) DoContext(ctx context.Context, fn func(context.Context) (T, e
 		f.context, f.cancel = context.WithCancel(ctx)
 	}
 
+	f.mut.Unlock()
+
 	go func() {
 		res, err := fn(f.context)
 		if err != nil {
-			f.errors <- err
+			select {
+			case f.errors <- err:
+			case <-f.context.Done():
+			}
 
 			return
 		}
 
-		f.result <- res
+		select {
+		case f.result <- res:
+		case <-f.context.Done():
+		}
 	}()
 }
 
@@ -176,6 +201,8 @@ func (f *First[T]) Wait() (T, error) {
 		}
 
 		select {
+		case <-f.context.Done():
+			return *new(T), f.context.Err()
 		case res := <-f.result:
 			return res, nil
 		case err := <-f.errors:

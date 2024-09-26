@@ -273,3 +273,39 @@ func TestContextFirstRoutines(t *testing.T) {
 		t.Fatalf("Expected one, got %s", res.name)
 	}
 }
+
+func TestRespectsCancel(t *testing.T) {
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var f first.First[*example]
+
+	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+		defer wg.Done()
+
+		wg.Wait()
+
+		return &example{name: "one"}, nil
+	})
+
+	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+		defer wg.Done()
+
+		wg.Wait()
+
+		return &example{name: "two"}, nil
+	})
+
+	go func() {
+		time.Sleep(1 * time.Millisecond)
+		cancel()
+	}()
+
+	_, err := f.Wait()
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("Expected %s, got %s", context.Canceled, err)
+	}
+}
