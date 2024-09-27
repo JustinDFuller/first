@@ -17,9 +17,9 @@ func TestContextFirstSecond(t *testing.T) {
 
 	ctx := context.Background()
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		time.Sleep(10 * time.Millisecond)
@@ -31,7 +31,7 @@ func TestContextFirstSecond(t *testing.T) {
 		return &example{name: "one"}, nil
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		if ctx.Err() != nil {
@@ -64,9 +64,9 @@ func TestContextFirstFirst(t *testing.T) {
 
 	ctx := context.Background()
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		if ctx.Err() != nil {
@@ -76,7 +76,7 @@ func TestContextFirstFirst(t *testing.T) {
 		return &example{name: "one"}, nil
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		time.Sleep(10 * time.Millisecond)
@@ -111,9 +111,9 @@ func TestContextFirstError(t *testing.T) {
 
 	ctx := context.Background()
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		time.Sleep(10 * time.Millisecond)
@@ -125,7 +125,7 @@ func TestContextFirstError(t *testing.T) {
 		return &example{name: "one"}, nil
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		if ctx.Err() != nil {
@@ -158,9 +158,9 @@ func TestContextErrors(t *testing.T) {
 
 	ctx := context.Background()
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		time.Sleep(10 * time.Millisecond)
@@ -172,7 +172,7 @@ func TestContextErrors(t *testing.T) {
 		return nil, errOne
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		if ctx.Err() != nil {
@@ -225,10 +225,10 @@ func TestContextFirstNone(t *testing.T) {
 func TestContextFirstRoutines(t *testing.T) {
 	ctx := context.Background()
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
 	// Go ahead and set up one func to avoid the ErrNothingToWaitOn error.
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		if ctx.Err() != nil {
 			t.Fatalf("Unexpected context error: %s", ctx.Err())
 		}
@@ -243,7 +243,7 @@ func TestContextFirstRoutines(t *testing.T) {
 	go func() {
 		defer wg.Done()
 
-		f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+		f.DoContext(func(ctx context.Context) (*example, error) {
 			time.Sleep(10 * time.Millisecond)
 
 			return &example{name: "two"}, nil
@@ -281,9 +281,9 @@ func TestRespectsCancel(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		wg.Wait()
@@ -291,7 +291,7 @@ func TestRespectsCancel(t *testing.T) {
 		return &example{name: "one"}, nil
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		wg.Wait()
@@ -317,9 +317,9 @@ func TestRespectsWithContextCancel(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	f, ctx := first.WithContext[*example](ctx)
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		wg.Wait()
@@ -327,7 +327,7 @@ func TestRespectsWithContextCancel(t *testing.T) {
 		return &example{name: "one"}, nil
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 
 		wg.Wait()
