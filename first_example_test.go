@@ -108,3 +108,20 @@ func ExampleFirst_DoContext() {
 	// 1 ctx=%!s(<nil>)
 	// 2 ctx=context canceled
 }
+
+func ExampleWithContext() {
+	f, ctx := first.WithContext[*example](context.Background())
+
+	f.Do(func() (*example, error) {
+		return &example{name: "one"}, nil
+	})
+
+	f.Do(func() (*example, error) {
+		return &example{name: "two"}, nil
+	})
+
+	_, _ = f.Wait()
+	fmt.Println(ctx.Err())
+	// output:
+	// context canceled
+}

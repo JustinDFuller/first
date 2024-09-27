@@ -46,14 +46,17 @@ type First[T any] struct {
 	cancel  context.CancelFunc
 }
 
-// Do executes the provided function in a goroutine.
-// It works in tandem with Wait() to retrieve the first result.
-//
-// When returning, the error should only have a value if T does not.
-// If the error is non-nil, T is ignored.
-// Do does not inspect the value of T. So, if error is nil, T is returned.
-func (f *First[T]) Do(fn func() (T, error)) {
+func WithContext[T any](ctx context.Context) (*First[T], context.Context) {
+	var f First[T]
+
+	f.init(ctx)
+
+	return &f, f.context
+}
+
+func (f *First[T]) init(ctx context.Context) {
 	f.mut.Lock()
+	defer f.mut.Unlock()
 
 	f.count++
 
@@ -66,17 +69,22 @@ func (f *First[T]) Do(fn func() (T, error)) {
 	}
 
 	if f.context == nil {
-		ctx := f.context
-
-		// Avoid a panic with nil context
 		if ctx == nil {
 			ctx = context.Background()
 		}
 
 		f.context, f.cancel = context.WithCancel(ctx)
 	}
+}
 
-	f.mut.Unlock()
+// Do executes the provided function in a goroutine.
+// It works in tandem with Wait() to retrieve the first result.
+//
+// When returning, the error should only have a value if T does not.
+// If the error is non-nil, T is ignored.
+// Do does not inspect the value of T. So, if error is nil, T is returned.
+func (f *First[T]) Do(fn func() (T, error)) {
+	f.init(context.Background())
 
 	go func() {
 		res, err := fn()
@@ -117,28 +125,7 @@ func (f *First[T]) Do(fn func() (T, error)) {
 //
 //	data, err := f.Wait()
 func (f *First[T]) DoContext(ctx context.Context, fn func(context.Context) (T, error)) {
-	f.mut.Lock()
-
-	f.count++
-
-	if f.result == nil {
-		f.result = make(chan T, 1)
-	}
-
-	if f.errors == nil {
-		f.errors = make(chan error)
-	}
-
-	if f.context == nil {
-		// Avoid a panic with nil context
-		if ctx == nil {
-			ctx = context.Background()
-		}
-
-		f.context, f.cancel = context.WithCancel(ctx)
-	}
-
-	f.mut.Unlock()
+	f.init(ctx)
 
 	go func() {
 		res, err := fn(f.context)

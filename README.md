@@ -84,11 +84,9 @@ type example struct{
 }
 
 func main() {
-	ctx := context.Background()
-
-	var f first.First[*example]
+	f, ctx := first.WithContext[*example](context.Background())
 	
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.Do(func() (*example, error) {
 		select {
 			case <-time.After(10 * time.Millisecond):		
 				return &example{name: "one"}, nil
@@ -98,7 +96,7 @@ func main() {
 		}
 	})
 	
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.Do(func() (*example, error) {
 		select {
 			case <-time.After(1 * time.Millisecond):		
 				return &example{name: "two"}, nil
@@ -115,6 +113,9 @@ func main() {
 	
 	log.Printf("Result: %v", res) // prints "two"
 	// Also prints, "skipped one"
+
+	log.Printf("Context: %s", ctx.Err())
+	// Prints: "Context: context canceled"
 }
 ```
 
