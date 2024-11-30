@@ -87,16 +87,16 @@ func ExampleFirst_DoContext() {
 
 	wg.Add(2)
 
-	var f first.First[*example]
+	f, _ := first.WithContext[*example](ctx)
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 		time.Sleep(1 * time.Millisecond)
 		fmt.Printf("2 ctx=%s\n", ctx.Err())
 		return nil, errors.New("oops 2")
 	})
 
-	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+	f.DoContext(func(ctx context.Context) (*example, error) {
 		defer wg.Done()
 		fmt.Printf("1 ctx=%s\n", ctx.Err())
 		return &example{name: "one"}, nil

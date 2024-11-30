@@ -46,6 +46,10 @@ type First[T any] struct {
 	cancel  context.CancelFunc
 }
 
+// WithContext initializes an instance of First with the given context.
+// It also returns the context that the instance of First will use.
+// After Wait() completes, the returned context will be canceled.
+// The parent context (passed in to this function) will NOT be canceled.
 func WithContext[T any](ctx context.Context) (*First[T], context.Context) {
 	var f First[T]
 
@@ -104,17 +108,18 @@ func (f *First[T]) Do(fn func() (T, error)) {
 	}()
 }
 
-// DoContext works like Do, except it accepts and provides a context.
-// The FIRST context provided to DoContext will be used. The rest will be ignored.
+// DoContext works like Do, except it provides a context.
 // After the first Do or DoContext call completes, the ctx provided to all DoContext callbacks will be canceled.
 // This is useful for canceling long-running tasks that should short-circuit when the first operation completes.
 // You are allowed to mix DoContext and Do with a single call to Wait.
 //
+// If you want to provide a context, use first.WithContext(ctx)
+//
 // Example:
 //
-//	var f first.First
+//	f, ctx := first.WithContext(ctx)
 //
-//	f.DoContext(ctx, func(ctx context.Context) (*example, error) {
+//	f.DoContext(func(ctx context.Context) (*example, error) {
 //		// do some long-running task that requires context
 //		data, err := getFromDatabase(ctx)
 //		if err != nil {
@@ -124,8 +129,8 @@ func (f *First[T]) Do(fn func() (T, error)) {
 //	})
 //
 //	data, err := f.Wait()
-func (f *First[T]) DoContext(ctx context.Context, fn func(context.Context) (T, error)) {
-	f.init(ctx)
+func (f *First[T]) DoContext(fn func(context.Context) (T, error)) {
+	f.init(context.Background())
 
 	go func() {
 		res, err := fn(f.context)
